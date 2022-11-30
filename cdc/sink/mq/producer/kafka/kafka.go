@@ -414,20 +414,19 @@ func AdjustConfig(
 		// make sure that producer's `MaxMessageBytes` smaller than topic's `max.message.bytes`
 		topicMaxMessageBytesStr, err := getTopicConfig(admin, info, kafka.TopicMaxMessageBytesConfigName,
 			kafka.BrokerMessageMaxBytesConfigName)
-		if err != nil {
-			return errors.Trace(err)
-		}
-		topicMaxMessageBytes, err := strconv.Atoi(topicMaxMessageBytesStr)
-		if err != nil {
-			return errors.Trace(err)
-		}
+		if err == nil {
+			topicMaxMessageBytes, err := strconv.Atoi(topicMaxMessageBytesStr)
+			if err != nil {
+				return errors.Trace(err)
+			}
 
-		if topicMaxMessageBytes < config.MaxMessageBytes {
-			log.Warn("topic's `max.message.bytes` less than the `max-message-bytes`,"+
-				"use topic's `max.message.bytes` to initialize the Kafka producer",
-				zap.Int("max.message.bytes", topicMaxMessageBytes),
-				zap.Int("max-message-bytes", config.MaxMessageBytes))
-			saramaConfig.Producer.MaxMessageBytes = topicMaxMessageBytes
+			if topicMaxMessageBytes < config.MaxMessageBytes {
+				log.Warn("topic's `max.message.bytes` less than the `max-message-bytes`,"+
+					"use topic's `max.message.bytes` to initialize the Kafka producer",
+					zap.Int("max.message.bytes", topicMaxMessageBytes),
+					zap.Int("max-message-bytes", config.MaxMessageBytes))
+				saramaConfig.Producer.MaxMessageBytes = topicMaxMessageBytes
+			}
 		}
 
 		// no need to create the topic, but we would have to log user if they found enter wrong topic name later
@@ -436,7 +435,7 @@ func AdjustConfig(
 				zap.String("topic", topic), zap.Any("detail", info))
 		}
 
-		if err := config.setPartitionNum(info.NumPartitions); err != nil {
+		if err = config.setPartitionNum(info.NumPartitions); err != nil {
 			return errors.Trace(err)
 		}
 
@@ -446,23 +445,22 @@ func AdjustConfig(
 	brokerMessageMaxBytesStr, err := getBrokerConfig(admin, kafka.BrokerMessageMaxBytesConfigName)
 	if err != nil {
 		log.Warn("TiCDC cannot find `message.max.bytes` from broker's configuration")
-		return errors.Trace(err)
-	}
-	brokerMessageMaxBytes, err := strconv.Atoi(brokerMessageMaxBytesStr)
-	if err != nil {
-		return errors.Trace(err)
-	}
-
-	// when create the topic, `max.message.bytes` is decided by the broker,
-	// it would use broker's `message.max.bytes` to set topic's `max.message.bytes`.
-	// TiCDC need to make sure that the producer's `MaxMessageBytes` won't larger than
-	// broker's `message.max.bytes`.
-	if brokerMessageMaxBytes < config.MaxMessageBytes {
-		log.Warn("broker's `message.max.bytes` less than the `max-message-bytes`,"+
-			"use broker's `message.max.bytes` to initialize the Kafka producer",
-			zap.Int("message.max.bytes", brokerMessageMaxBytes),
-			zap.Int("max-message-bytes", config.MaxMessageBytes))
-		saramaConfig.Producer.MaxMessageBytes = brokerMessageMaxBytes
+	} else {
+		brokerMessageMaxBytes, err := strconv.Atoi(brokerMessageMaxBytesStr)
+		if err != nil {
+			return errors.Trace(err)
+		}
+		// when create the topic, `max.message.bytes` is decided by the broker,
+		// it would use broker's `message.max.bytes` to set topic's `max.message.bytes`.
+		// TiCDC need to make sure that the producer's `MaxMessageBytes` won't larger than
+		// broker's `message.max.bytes`.
+		if brokerMessageMaxBytes < config.MaxMessageBytes {
+			log.Warn("broker's `message.max.bytes` less than the `max-message-bytes`,"+
+				"use broker's `message.max.bytes` to initialize the Kafka producer",
+				zap.Int("message.max.bytes", brokerMessageMaxBytes),
+				zap.Int("max-message-bytes", config.MaxMessageBytes))
+			saramaConfig.Producer.MaxMessageBytes = brokerMessageMaxBytes
+		}
 	}
 
 	// topic not exists yet, and user does not specify the `partition-num` in the sink uri.

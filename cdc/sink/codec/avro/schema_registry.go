@@ -85,17 +85,17 @@ func NewAvroSchemaManager(
 	}
 	defer resp.Body.Close()
 
-	text, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Error("Reading response from Schema Registry failed", zap.Error(err))
-		return nil, cerror.WrapError(cerror.ErrAvroSchemaAPIError, err)
-	}
+	//text, err := io.ReadAll(resp.Body)
+	//if err != nil {
+	//	log.Error("Reading response from Schema Registry failed", zap.Error(err))
+	//	return nil, cerror.WrapError(cerror.ErrAvroSchemaAPIError, err)
+	//}
 
-	if string(text[:]) != "{}" {
-		return nil, cerror.ErrAvroSchemaAPIError.GenWithStack(
-			"Unexpected response from Schema Registry",
-		)
-	}
+	//if string(text[:]) != "{}" {
+	//	return nil, cerror.ErrAvroSchemaAPIError.GenWithStack(
+	//		"Unexpected response from Schema Registry",
+	//	)
+	//}
 
 	log.Info(
 		"Successfully tested connectivity to Schema Registry",
